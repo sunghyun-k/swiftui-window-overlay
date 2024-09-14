@@ -27,7 +27,7 @@ extension UIColor {
 
 extension View {
   @ViewBuilder
-  nonisolated public func _background(
+  nonisolated internal func _background(
     alignment: Alignment = .center,
     @ViewBuilder content: () -> some View
   ) -> some View {
