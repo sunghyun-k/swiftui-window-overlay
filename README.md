@@ -10,21 +10,21 @@ WindowOverlay is a Swift package that provides a convenient way to add overlay v
 To use WindowOverlay in your SwiftUI view, simply apply the `windowOverlay` modifier:
 ```swift
 struct ContentView: View {
-    @State private var showOverlay = false
+  @State private var showOverlay = false
     
-    var body: some View {
-        VStack {
-            Button("Show Overlay") {
-                showOverlay.toggle()
-            }
-        }
-        .windowOverlay(isPresented: showOverlay) {
-            Text("This is an overlay")
-                .padding()
-                .background(Color.white)
-                .cornerRadius(10)
-        }
+  var body: some View {
+    VStack {
+      Button("Show Overlay") {
+        showOverlay.toggle()
+     }
+  }
+  .windowOverlay(isPresented: showOverlay) {
+    Text("This is an overlay")
+      .padding()
+      .background(Color.white)
+      .cornerRadius(10)
     }
+  }
 }
 ```
 
