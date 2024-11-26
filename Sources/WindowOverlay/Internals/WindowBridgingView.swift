@@ -6,19 +6,22 @@ internal struct WindowBridgingView<V: View>: UIViewRepresentable {
   var content: V
 
   func makeUIView(context: Context) -> _HelperView {
-    let hostingController = UIHostingController(rootView: EnvPassingView(
-      content: content,
-      environment: context.environment
-    ))
-    hostingController.view.backgroundColor = .clear
-    return _HelperView(hostingController: hostingController)
+    return _HelperView(
+      isPresented: isPresented,
+      content: EnvPassingView(
+        content: content,
+        environment: context.environment
+      )
+    )
   }
   func updateUIView(_ helper: _HelperView, context: Context) {
-    helper.hostingController.rootView = EnvPassingView(
-      content: content,
-      environment: context.environment
+    helper.setContent(
+      isPresented: isPresented,
+      content: EnvPassingView(
+        content: content,
+        environment: context.environment
+      )
     )
-    helper.isPresented = isPresented
   }
 
   fileprivate struct EnvPassingView: View {
@@ -29,28 +32,53 @@ internal struct WindowBridgingView<V: View>: UIViewRepresentable {
       content.environment(\.self, environment)
     }
   }
-
+  
   internal final class _HelperView: UIView {
-    var isPresented = false {
-      didSet { overlayWindow?.isHidden = !isPresented }
-    }
-    private var overlayWindow: WindowOverlayWindow?
-    fileprivate let hostingController: UIHostingController<EnvPassingView>
+    private var isPresented: Bool
+    private var content: EnvPassingView
 
-    fileprivate init(hostingController: UIHostingController<EnvPassingView>) {
-      self.hostingController = hostingController
+    private var overlayWindow: WindowOverlayWindow?
+    private var hostingController: UIHostingController<EnvPassingView>? {
+      overlayWindow?.rootViewController as? UIHostingController<EnvPassingView>
+    }
+
+    fileprivate init(isPresented: Bool, content: EnvPassingView) {
+      self.isPresented = isPresented
+      self.content = content
       super.init(frame: .zero)
     }
+
     required init?(coder: NSCoder) { fatalError() }
 
     override func willMove(toWindow newWindow: UIWindow?) {
       super.willMove(toWindow: newWindow)
       if let windowScene = newWindow?.windowScene {
-        overlayWindow = WindowOverlayWindow(
-          windowScene: windowScene,
-          rootViewController: hostingController
-        )
-        overlayWindow?.isHidden = !isPresented
+        overlayWindow = WindowOverlayWindow(windowScene: windowScene)
+        updateView()
+      }
+    }
+
+    fileprivate func setContent(
+      isPresented: Bool,
+      content: EnvPassingView
+    ) {
+      self.isPresented = isPresented
+      self.content = content
+      updateView()
+    }
+
+    private func updateView() {
+      if isPresented {
+        if hostingController == nil {
+          overlayWindow?.rootViewController = UIHostingController(rootView: content)
+          overlayWindow?.rootViewController?.view.backgroundColor = .clear
+        } else {
+          hostingController?.rootView = content
+        }
+        overlayWindow?.isHidden = false
+      } else {
+        overlayWindow?.rootViewController = nil
+        overlayWindow?.isHidden = true
       }
     }
   }

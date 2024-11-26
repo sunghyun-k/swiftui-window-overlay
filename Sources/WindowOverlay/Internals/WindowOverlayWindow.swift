@@ -1,10 +1,9 @@
 import UIKit
 
 internal final class WindowOverlayWindow: UIWindow {
-  init(windowScene: UIWindowScene, rootViewController: UIViewController) {
+  override init(windowScene: UIWindowScene) {
     super.init(windowScene: windowScene)
     self.windowLevel = .alert
-    self.rootViewController = rootViewController
   }
   required init?(coder: NSCoder) { fatalError() }
 
