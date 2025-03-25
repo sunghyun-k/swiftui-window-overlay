@@ -3,11 +3,13 @@ import UIKit
 
 internal struct WindowBridgingView<V: View>: UIViewRepresentable {
   var isPresented: Bool
+  var disableSafeArea: Bool
   var content: V
 
   func makeUIView(context: Context) -> _HelperView {
     return _HelperView(
       isPresented: isPresented,
+      disableSafeArea: disableSafeArea,
       content: EnvPassingView(
         content: content,
         environment: context.environment
@@ -17,6 +19,7 @@ internal struct WindowBridgingView<V: View>: UIViewRepresentable {
   func updateUIView(_ helper: _HelperView, context: Context) {
     helper.setContent(
       isPresented: isPresented,
+      disableSafeArea: disableSafeArea,
       content: EnvPassingView(
         content: content,
         environment: context.environment
@@ -32,9 +35,10 @@ internal struct WindowBridgingView<V: View>: UIViewRepresentable {
       content.environment(\.self, environment)
     }
   }
-  
+
   internal final class _HelperView: UIView {
     private var isPresented: Bool
+    private var disableSafeArea: Bool
     private var content: EnvPassingView
 
     private var overlayWindow: WindowOverlayWindow?
@@ -42,8 +46,9 @@ internal struct WindowBridgingView<V: View>: UIViewRepresentable {
       overlayWindow?.rootViewController as? UIHostingController<EnvPassingView>
     }
 
-    fileprivate init(isPresented: Bool, content: EnvPassingView) {
+    fileprivate init(isPresented: Bool, disableSafeArea: Bool, content: EnvPassingView) {
       self.isPresented = isPresented
+      self.disableSafeArea = disableSafeArea
       self.content = content
       super.init(frame: .zero)
     }
@@ -60,9 +65,11 @@ internal struct WindowBridgingView<V: View>: UIViewRepresentable {
 
     fileprivate func setContent(
       isPresented: Bool,
+      disableSafeArea: Bool,
       content: EnvPassingView
     ) {
       self.isPresented = isPresented
+      self.disableSafeArea = disableSafeArea
       self.content = content
       updateView()
     }
@@ -72,6 +79,7 @@ internal struct WindowBridgingView<V: View>: UIViewRepresentable {
         if hostingController == nil {
           overlayWindow?.rootViewController = UIHostingController(rootView: content)
           overlayWindow?.rootViewController?.view.backgroundColor = .clear
+          hostingController?.disableSafeArea(disableSafeArea)
         } else {
           hostingController?.rootView = content
         }
@@ -80,6 +88,16 @@ internal struct WindowBridgingView<V: View>: UIViewRepresentable {
         overlayWindow?.rootViewController = nil
         overlayWindow?.isHidden = true
       }
+    }
+  }
+}
+
+extension UIHostingController {
+  func disableSafeArea(_ disable: Bool) {
+    if #available(iOS 16.4, *) {
+      self.safeAreaRegions = disable ? [] : .all
+    } else {
+      self._disableSafeArea = disable
     }
   }
 }
