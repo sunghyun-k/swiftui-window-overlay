@@ -46,6 +46,7 @@ Any change to the hit test needs checking on every iOS runtime you can install, 
 | `Button`, text on `.ultraThinMaterial`, an opaque color | takes the touch |
 | `Toggle`, `ScrollView`, `TextField` | takes the touch |
 | `Color.black.opacity(0.001)` | takes the touch |
+| `.glassEffect()`, `.buttonStyle(.glass)` (iOS 26+) | takes the touch |
 | `.allowsHitTesting(false)` content, empty space | passes through |
 | `Color.clear.contentShape(Rectangle())` | passes through (known limitation) |
 
