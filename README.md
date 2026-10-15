@@ -5,6 +5,7 @@ WindowOverlay is a Swift package that provides a convenient way to add overlay v
 - Easy integration with SwiftUI
 - Customizable overlay content
 - Touches pass through wherever the overlay draws nothing
+- Inherits the environment of the view it's attached to
 - Keeps the app's status bar style and color scheme
 
 ## Usage
@@ -38,12 +39,6 @@ A clear `contentShape` draws nothing, so touches there pass through too. For an 
 Color.black.opacity(0.001)
   .onTapGesture { ... }
 ```
-
-## How it works
-1. The `windowOverlay` modifier places a `WindowBridgingView` in the background of your view.
-1. When presented, it creates a `WindowOverlayWindow` in the same window scene, just below system alerts.
-1. The overlay content is rendered in that window with your view's environment.
-1. The window's hit test checks whether SwiftUI drew anything at the touch point, and lets the touch through if not.
 
 ## Requirements
 - iOS 13.0+
