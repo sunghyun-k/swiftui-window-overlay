@@ -1,6 +1,9 @@
 import SwiftUI
 
 extension View {
+  /// Presents `content` in a separate window above the app's window, including sheets and the keyboard.
+  ///
+  /// Touches pass through to the app wherever the overlay draws nothing.
   public func windowOverlay<V: View>(
     isPresented: Bool,
     disableSafeArea: Bool = false,

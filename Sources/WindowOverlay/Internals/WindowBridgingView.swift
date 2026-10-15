@@ -7,27 +7,20 @@ internal struct WindowBridgingView<V: View>: UIViewRepresentable {
   var content: V
 
   func makeUIView(context: Context) -> _HelperView {
-    return _HelperView(
-      isPresented: isPresented,
-      disableSafeArea: disableSafeArea,
-      content: EnvPassingView(
-        content: content,
-        environment: context.environment
-      )
-    )
+    _HelperView()
   }
+
   func updateUIView(_ helper: _HelperView, context: Context) {
-    helper.setContent(
+    helper.update(
       isPresented: isPresented,
       disableSafeArea: disableSafeArea,
-      content: EnvPassingView(
-        content: content,
-        environment: context.environment
-      )
+      content: content,
+      environment: context.environment
     )
   }
 
-  fileprivate struct EnvPassingView: View {
+  /// The overlay window is outside the SwiftUI hierarchy, so the environment is passed explicitly.
+  fileprivate struct RootView: View {
     var content: V
     var environment: EnvironmentValues
 
@@ -37,57 +30,70 @@ internal struct WindowBridgingView<V: View>: UIViewRepresentable {
   }
 
   internal final class _HelperView: UIView {
-    private var isPresented: Bool
-    private var disableSafeArea: Bool
-    private var content: EnvPassingView
+    private var isPresented = false
+    private var disableSafeArea = false
+    private var content: V?
+    private var environment = EnvironmentValues()
 
     private var overlayWindow: WindowOverlayWindow?
-    private var hostingController: UIHostingController<EnvPassingView>? {
-      overlayWindow?.rootViewController as? UIHostingController<EnvPassingView>
-    }
+    private var hostingController: StatusBarForwardingHostingController<RootView>?
 
-    fileprivate init(isPresented: Bool, disableSafeArea: Bool, content: EnvPassingView) {
-      self.isPresented = isPresented
-      self.disableSafeArea = disableSafeArea
-      self.content = content
-      super.init(frame: .zero)
-    }
-
-    required init?(coder: NSCoder) { fatalError() }
-
-    override func willMove(toWindow newWindow: UIWindow?) {
-      super.willMove(toWindow: newWindow)
-      if let windowScene = newWindow?.windowScene {
-        overlayWindow = WindowOverlayWindow(windowScene: windowScene)
-        updateView()
+    override func didMoveToWindow() {
+      super.didMoveToWindow()
+      if let windowScene = window?.windowScene {
+        if overlayWindow?.windowScene !== windowScene {
+          tearDown()
+          overlayWindow = WindowOverlayWindow(windowScene: windowScene)
+        }
+        updateWindow()
+      } else {
+        tearDown()
       }
     }
 
-    fileprivate func setContent(
+    fileprivate func update(
       isPresented: Bool,
       disableSafeArea: Bool,
-      content: EnvPassingView
+      content: V,
+      environment: EnvironmentValues
     ) {
       self.isPresented = isPresented
       self.disableSafeArea = disableSafeArea
       self.content = content
-      updateView()
+      self.environment = environment
+      updateWindow()
     }
 
-    private func updateView() {
-      if isPresented {
-        if hostingController == nil {
-          overlayWindow?.rootViewController = UIHostingController(rootView: content)
-          overlayWindow?.rootViewController?.view.backgroundColor = .clear
-          hostingController?.disableSafeArea(disableSafeArea)
-        } else {
-          hostingController?.rootView = content
-        }
-        overlayWindow?.isHidden = false
-      } else {
-        overlayWindow?.rootViewController = nil
-        overlayWindow?.isHidden = true
+    private func updateWindow() {
+      guard let overlayWindow, let content else { return }
+      guard isPresented else {
+        overlayWindow.isHidden = true
+        overlayWindow.rootViewController = nil
+        hostingController = nil
+        return
       }
+      let rootView = RootView(content: content, environment: environment)
+      if let hostingController {
+        hostingController.rootView = rootView
+      } else {
+        let controller = StatusBarForwardingHostingController(rootView: rootView)
+        controller.view.backgroundColor = .clear
+        overlayWindow.rootViewController = controller
+        hostingController = controller
+      }
+      hostingController?.disableSafeArea(disableSafeArea)
+      hostingController?.sourceWindow = window
+      // Match the app window so the status bar text keeps its color (`.preferredColorScheme` applies there).
+      overlayWindow.overrideUserInterfaceStyle = window?.overrideUserInterfaceStyle ?? .unspecified
+      overlayWindow.isHidden = false
+      hostingController?.setNeedsStatusBarAppearanceUpdate()
+    }
+
+    private func tearDown() {
+      overlayWindow?.isHidden = true
+      overlayWindow?.rootViewController = nil
+      overlayWindow = nil
+      hostingController = nil
     }
   }
 }
