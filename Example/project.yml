@@ -1,0 +1,20 @@
+# Source for HitTestCheck.xcodeproj. After editing, run `xcodegen` in this folder.
+name: HitTestCheck
+options:
+  bundleIdPrefix: dev.windowoverlay
+packages:
+  WindowOverlay:
+    path: ..
+targets:
+  HitTestCheck:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources: [HitTestCheck]
+    dependencies:
+      - package: WindowOverlay
+    settings:
+      GENERATE_INFOPLIST_FILE: YES
+      INFOPLIST_KEY_UILaunchScreen_Generation: YES
+      SWIFT_VERSION: "5.0"
+      CODE_SIGNING_ALLOWED: NO

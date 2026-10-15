@@ -39,7 +39,15 @@ Touches pass through wherever the overlay draws nothing. `WindowOverlayWindow.hi
 
 Don't go back to sampling pixel alpha: it misses materials and renders on every touch.
 
-Any change to the hit test needs checking on every iOS runtime you can install, in a Release build. There's no test target because the check needs a running app. Build a small app that shows an overlay with the cases below, calls the overlay window's `hitTest(_:with:)` at each point, and prints the results:
+## Checking
+
+Any change to the hit test or the window lifecycle needs checking on every iOS runtime you can install. There's no test target because the check needs a running app. Use the app in `Example/` instead:
+
+```bash
+Example/check.sh
+```
+
+It builds `HitTestCheck` in Release, runs it on the first available iPhone simulator of each installed iOS runtime, and exits non-zero if any line says `FAIL`. For each case it calls the overlay window's `hitTest(_:with:)` and compares the result with what's expected:
 
 | Content | Expected |
 |---|---|
@@ -50,4 +58,6 @@ Any change to the hit test needs checking on every iOS runtime you can install, 
 | `.allowsHitTesting(false)` content, empty space | passes through |
 | `Color.clear.contentShape(Rectangle())` | passes through (known limitation) |
 
-After dismissing, check that the overlay window is hidden and its `rootViewController` is `nil`.
+It also checks that the overlay window is hidden and its `rootViewController` is `nil` after dismissing.
+
+To add a case, add it to `cases(tap:)` in `Example/HitTestCheck/HitTestCheckApp.swift` and to the table above. Run the app normally to tap through the cases by hand. `Example/project.yml` is the source for `HitTestCheck.xcodeproj`: after editing it, run `xcodegen` in `Example/`.
